@@ -1,0 +1,92 @@
+# Node modules
+node_modules/
+
+# Build output
+.next/
+out/
+dist/
+
+# Log files
+*.log
+
+# Dependency directories
+jspm_packages/
+
+# Production environment files
+.env.production
+
+# Development environment files
+.env.local
+.env.development.local
+.env.test.local
+
+# VSCode settings
+.vscode/
+
+# IntelliJ IDEA settings
+.idea/
+
+# macOS system files
+.DS_Store
+
+# Windows system files
+Thumbs.db
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Next.js cache
+.next/cache/
+
+# npm package lock
+package-lock.json
+
+# Yarn lock file
+yarn.lock
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Sentry configuration
+.sentry/
+
+# Storybook build output
+storybook-static/
+
+# Expo files
+.expo/
+
+# Debugging files
+*.log
+*.pid
+*.seed
+
+# Local env files
+.env.*
+*.local
+
+# Personal IDE settings
+*.sublime-project
+*.sublime-workspace
+
+# Optional: Exclude test and coverage reports
+coverage/
+*.nyc_output/
+
+# Optional: Ignore specific IDE configurations
+*.code-workspace
+*.vscode/*
+*.suo
+*.user
+*.userosscache
+*.suo
+*.ncb
+*.sln
+*.swp
+*.swo
+
+# Optional: Ignore temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
