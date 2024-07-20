@@ -7,13 +7,42 @@ import DeleteButton from "@/components/delete-button";
 import { useItemSelection } from "@/components/utils/use-item-selection";
 import CustomersTableItem from "./customers-table-item";
 import TipTapDoc from "./document";
+import { format } from "date-fns";
+
+export interface DocumentVersion {
+  date: string;
+  content: string;
+}
 
 export interface Document {
   id: number;
   name: string;
   date: string;
   content: string;
+  versions: DocumentVersion[];
 }
+
+interface VersionHistoryProps {
+  versions: DocumentVersion[];
+  onRevert: (content: string) => void;
+}
+
+const VersionHistory: React.FC<VersionHistoryProps> = ({
+  versions,
+  onRevert,
+}) => (
+  <div className="version-history" style={{ paddingTop: "1rem" }}>
+    <ul>
+      {versions.map((version, index) => (
+        <li key={index}>
+          <button onClick={() => onRevert(version.content)}>
+            {version.date.toLocaleString()}
+          </button>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
 export default function CustomersTable() {
   const [documentIsOpen, setDocumentIsOpen] = useState<boolean>(false);
@@ -22,6 +51,8 @@ export default function CustomersTable() {
   const [initialContent, setInitialContent] = useState("<p></p>");
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const [editName, setEditName] = useState<string>("");
+  const [versionHistoryIsOpen, setVersionHistoryIsOpen] =
+    useState<boolean>(false);
 
   // Load documents from localStorage on component mount
   useEffect(() => {
@@ -42,7 +73,19 @@ export default function CustomersTable() {
   const handleSave = (html: string) => {
     if (currentDocument) {
       const updatedDocuments = documents.map((doc) =>
-        doc.id === currentDocument.id ? { ...doc, content: html } : doc
+        doc.id === currentDocument.id
+          ? {
+              ...doc,
+              content: html,
+              versions: [
+                ...currentDocument.versions,
+                {
+                  date: format(new Date(), "MMM dd yyyy h:mm a"),
+                  content: html,
+                },
+              ],
+            }
+          : doc
       );
       setDocuments(updatedDocuments);
       setCurrentDocument({ ...currentDocument, content: html });
@@ -53,8 +96,14 @@ export default function CustomersTable() {
     const newDocument: Document = {
       id: Date.now(),
       name: `Document ${documents.length + 1}`,
-      date: new Date().toLocaleDateString(),
+      date: format(new Date(), "MMM dd yyyy h:mm a"),
       content: "<p></p>",
+      versions: [
+        {
+          date: format(new Date(), "MMM dd yyyy h:mm a"),
+          content: "<p></p>",
+        },
+      ],
     };
     const updatedDocuments = [...documents, newDocument];
     setDocuments(updatedDocuments);
@@ -67,6 +116,7 @@ export default function CustomersTable() {
   const handleLoadDocument = (doc: Document) => {
     setCurrentDocument(doc);
     setInitialContent(doc.content);
+    setEditName(doc.name);
     setDocumentIsOpen(true);
   };
 
@@ -86,6 +136,21 @@ export default function CustomersTable() {
       setDocuments(updatedDocuments);
       setCurrentDocument({ ...currentDocument, name: editName });
     }
+  };
+
+  const handleRevert = (content: string) => {
+    if (currentDocument) {
+      setCurrentDocument({ ...currentDocument, content });
+      setInitialContent(content);
+    }
+  };
+
+  const handleDelete = () => {
+    console.log(`Deleting ${selectedItems.length} items`);
+    const updatedDocuments = documents.filter(
+      (doc) => !selectedItems.includes(doc.id)
+    );
+    setDocuments(updatedDocuments);
   };
 
   const {
@@ -122,7 +187,19 @@ export default function CustomersTable() {
               }}
             >
               <div style={{ margin: "auto", marginRight: "0.6rem" }}>
-                <DeleteButton />
+                <div
+                  onClick={() => handleDelete()}
+                  className={`${selectedItems.length < 1 && "hidden"}`}
+                >
+                  <div className="flex items-center">
+                    <div className="hidden xl:block text-sm italic mr-2 whitespace-nowrap">
+                      <span>{selectedItems.length}</span> items selected
+                    </div>
+                    <button className="btn bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 text-red-500">
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
               {/* Add Document button */}
               <button
@@ -229,21 +306,53 @@ export default function CustomersTable() {
                 }}
               >
                 {currentDocument && currentDocument.name && (
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={handleNameChange}
-                    onBlur={handleSaveName}
-                    style={{
-                      backgroundColor: "#212936",
-                      color: "White",
-                      fontSize: "2rem",
-                      fontWeight: "bold",
-                      border: "1px solid gray",
-                      borderRadius: "0.25rem",
-                      padding: "0.5rem",
-                    }}
-                  />
+                  <div>
+                    <div style={{ display: "flex", flexDirection: "row" }}>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={handleNameChange}
+                        onBlur={handleSaveName}
+                        style={{
+                          backgroundColor: "#212936",
+                          color: "White",
+                          fontSize: "2rem",
+                          fontWeight: "bold",
+                          border: "1px solid gray",
+                          borderRadius: "0.25rem",
+                          padding: "0.5rem",
+                        }}
+                      />
+                      <button
+                        className="btn bg-gray-900 text-gray-100 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-800 dark:hover:bg-white"
+                        onClick={() => setVersionHistoryIsOpen((prev) => !prev)} // Save current content
+                        style={{
+                          height: "2.5rem",
+                          margin: "auto",
+                          marginLeft: "1.5rem",
+                        }}
+                      >
+                        <svg
+                          className="fill-current shrink-0 xs:hidden"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                        >
+                          <path d="M15 7H9V1c0-.6-.4-1-1-1S7 .4 7 1v6H1c-.6 0-1 .4-1 1s.4 1 1 1h6v6c0 .6.4 1 1 1s1-.4 1-1V9h6c.6 0 1-.4 1-1s-.4-1-1-1z" />
+                        </svg>
+                        <span className="max-xs:sr-only">
+                          Toggle Version History
+                        </span>
+                      </button>
+                    </div>
+
+                    {versionHistoryIsOpen && (
+                      <VersionHistory
+                        versions={currentDocument.versions}
+                        onRevert={handleRevert}
+                      ></VersionHistory>
+                    )}
+                  </div>
                 )}
                 <div
                   style={{
